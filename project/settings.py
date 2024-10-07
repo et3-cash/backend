@@ -34,11 +34,14 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'drf_yasg',
     'drf_spectacular',
+    'corsheaders',
 
     # Local apps
     'wallet',
 ]
 
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 
 
 MIDDLEWARE = [

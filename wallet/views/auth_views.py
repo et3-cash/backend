@@ -11,6 +11,9 @@ from wallet.services.auth_service import create_user, authenticate_user, send_ot
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from wallet.serializers import AccountSerializer
+from wallet.models import Account
+
 
 class RegisterUserView(APIView):
     def post(self, request):
@@ -62,11 +65,20 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
         
+        # Ensure the user is active
         if not self.user.is_active:
             raise serializers.ValidationError(
                 {"error": "User account is not active."}
             )
         
+        # Add user account data to the response
+        try:
+            account = Account.objects.get(user=self.user)
+            account_data = AccountSerializer(account).data
+            data['account'] = account_data
+        except Account.DoesNotExist:
+            data['account'] = None
+
         return data
 
 class LoginUserView(TokenObtainPairView):
