@@ -6,7 +6,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from wallet.models import User, OTP, Account
 from wallet.serializers import UserSerializer
-from wallet.services.auth_service import create_user, authenticate_user, send_otp, verify_otp
+from wallet.services.auth_service import  send_otp, verify_otp
 
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -16,18 +16,22 @@ from wallet.models import Account
 
 
 class RegisterUserView(APIView):
-    def post(self, request):
+    def post(self, request, format=None):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-
-            # Generate and save OTP
-            otp = send_otp(user.phone_number)
-
-            return Response({
+            
+            try:
+                # Generate and save OTP
+                otp = send_otp(user.phone_number)
+                # user.save()
+                return Response({
                 "user": UserSerializer(user).data,
-                "otp": otp  # Include the OTP in the response
+                "message": "The OTP has been sent to your phone number."
             }, status=status.HTTP_201_CREATED)
+            except:
+                return Response({"message": "An error occurred while sending the OTP"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -35,7 +39,6 @@ class VerifyOTPView(APIView):
     def post(self, request):
         phone_number = request.data.get('phone_number')
         otp = request.data.get('otp')
-        
         if verify_otp(phone_number, otp):
             try:
                 user = User.objects.get(phone_number=phone_number)
@@ -63,7 +66,9 @@ class VerifyOTPView(APIView):
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
+        
         data = super().validate(attrs)
+        
         
         # Ensure the user is active
         if not self.user.is_active:

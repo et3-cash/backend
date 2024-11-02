@@ -12,6 +12,8 @@ class UserManager(BaseUserManager):
         if not phone_number:
             raise ValueError("Users must have a phone number")
         
+        
+
         user = self.model(phone_number=phone_number)
         user.set_password(password)
         user.save(using=self._db)
@@ -32,7 +34,7 @@ class User(AbstractBaseUser):
     objects = UserManager()
 
     USERNAME_FIELD = 'phone_number'
-    REQUIRED_FIELDS = ['password']
+    REQUIRED_FIELDS = []
 
     def __str__(self):
         return self.phone_number
@@ -44,7 +46,7 @@ class User(AbstractBaseUser):
         return self.is_admin
 
 class OTP(models.Model):
-    phone_number = models.CharField(max_length=11)  
+    phone_number = models.CharField(max_length=15)  
     otp_code = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
     is_verified = models.BooleanField(default=False)

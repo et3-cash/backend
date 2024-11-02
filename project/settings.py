@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     'drf_spectacular',
     'corsheaders',
+    'django_celery_beat',
 
     # Local apps
     'wallet',
@@ -79,7 +80,7 @@ WSGI_APPLICATION = 'project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'wallet_db',
+        'NAME': env('DB_NAME'),
         'USER': env('DB_USER'),
         'PASSWORD': env('DB_PASSWORD'),
         'HOST': env('DB_HOST', default='localhost'),
@@ -164,3 +165,35 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',  # Default Django backend (optional, but recommended)
 ]
 
+# Twilio settings
+TWILIO_ACCOUNT_SID = env('TWILIO_ACCOUNT_SID')
+TWILIO_AUTH_TOKEN = env('TWILIO_AUTH_TOKEN')
+TWILIO_PHONE_NUMBER = env('TWILIO_PHONE_NUMBER')
+
+
+# Celery settings
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Redis
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}
+
+CELERY_BEAT_SCHEDULE = {
+    'delete-expired-otps': {
+        'task': 'wallet.tasks.delete_expired_otps',
+        'schedule': timedelta(seconds=30),
+    }
+}

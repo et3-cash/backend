@@ -1,21 +1,29 @@
 from django.contrib.auth import authenticate
 from wallet.models import User, Account, OTP
-
-def authenticate_user(phone_number, password):
-    # This will now use the custom backend defined above
-    return authenticate(phone_number=phone_number, password=password)
-
-def create_user(phone_number, password):
-    user = User.objects.create_user(phone_number=phone_number, password=password)
-    Account.objects.create(user=user)
-    return user
+from twilio.rest import Client
+from django.conf import settings
 
 def send_otp(phone_number):
     otp_instance = OTP.objects.create(phone_number=phone_number)
     otp_code = otp_instance.generate_otp()
     
-    # FUTURE WORK: Implement the logic to send the OTP via SMS or other methods here
-    return otp_code
+    client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+    
+    # if the phone number does not start with '+2', add it
+    if phone_number and not phone_number.startswith('+2'):
+        phone_number = f'+2{phone_number}'
+    
+    message = client.api.account.messages.create(
+        body=f"Your OTP code is {otp_code}",
+        from_=settings.TWILIO_PHONE_NUMBER,
+        to=phone_number
+    )
+
+    # check if the message was sent successfully
+    if message.sid:
+        return otp_code
+    else:
+        return None
 
 def verify_otp(phone_number, otp):
     try:

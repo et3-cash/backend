@@ -7,7 +7,6 @@ from rest_framework.permissions import IsAuthenticated
 
 from wallet.models import Account, Transaction
 from wallet.serializers import AccountSerializer, TransactionSerializer, UserSerializer
-from wallet.services.auth_service import authenticate_user
 
 from wallet.permissions import IsOwner
 
